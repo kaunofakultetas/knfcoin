@@ -482,6 +482,9 @@ int GuiMain(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    // Force English for all starts, regardless of system/GUI settings
+    gArgs.ForceSetArg("-lang", "en_US");
+
     // Now that the QApplication is setup and we have parsed our parameters, we can set the platform style
     app.setupPlatformStyle();
 
