@@ -367,6 +367,11 @@ CAddrInfo CAddrMan::Select_(bool newOnly)
        (nTried > 0 && (nNew == 0 || insecure_rand.randbool() == 0))) {
         // use a tried node
         double fChanceFactor = 1.0;
+        /* KNFCoin: cap the retry loop. With very few known addresses (all
+         * recently tried / failing) the acceptance chance drops to ~0.0004 and
+         * each retry rescans a mostly-empty 16k-slot table, burning CPU. After
+         * a handful of rejections just return the candidate. */
+        int nSelectTries = 0;
         while (1) {
             int nKBucket = insecure_rand.randrange(ADDRMAN_TRIED_BUCKET_COUNT);
             int nKBucketPos = insecure_rand.randrange(ADDRMAN_BUCKET_SIZE);
@@ -377,13 +382,14 @@ CAddrInfo CAddrMan::Select_(bool newOnly)
             int nId = vvTried[nKBucket][nKBucketPos];
             assert(mapInfo.count(nId) == 1);
             CAddrInfo& info = mapInfo[nId];
-            if (insecure_rand.randbits(30) < fChanceFactor * info.GetChance() * (1 << 30))
+            if (++nSelectTries > 8 || insecure_rand.randbits(30) < fChanceFactor * info.GetChance() * (1 << 30))
                 return info;
             fChanceFactor *= 1.2;
         }
     } else {
         // use a new node
         double fChanceFactor = 1.0;
+        int nSelectTries = 0; // KNFCoin: see comment in the tried branch above
         while (1) {
             int nUBucket = insecure_rand.randrange(ADDRMAN_NEW_BUCKET_COUNT);
             int nUBucketPos = insecure_rand.randrange(ADDRMAN_BUCKET_SIZE);
@@ -394,7 +400,7 @@ CAddrInfo CAddrMan::Select_(bool newOnly)
             int nId = vvNew[nUBucket][nUBucketPos];
             assert(mapInfo.count(nId) == 1);
             CAddrInfo& info = mapInfo[nId];
-            if (insecure_rand.randbits(30) < fChanceFactor * info.GetChance() * (1 << 30))
+            if (++nSelectTries > 8 || insecure_rand.randbits(30) < fChanceFactor * info.GetChance() * (1 << 30))
                 return info;
             fChanceFactor *= 1.2;
         }

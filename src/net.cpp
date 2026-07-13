@@ -2079,8 +2079,17 @@ void CConnman::ThreadOpenConnections(const std::vector<std::string> connect)
                 continue;
 
             // only consider very recently tried nodes after 30 failed attempts
-            if (nANow - addr.nLastTry < 600 && nTries < 30)
+            if (nANow - addr.nLastTry < 600 && nTries < 30) {
+                /* KNFCoin: on a tiny network addrman may hold only a handful of
+                 * (possibly unreachable) addresses. Re-selecting them dozens of
+                 * times per iteration makes this thread spin at ~40% CPU while
+                 * idle. If we have already retried as many times as there are
+                 * known addresses, everything is recently-tried: give up and let
+                 * the outer loop sleep instead. */
+                if (addrman.size() <= (size_t)nTries)
+                    break;
                 continue;
+            }
 
             // for non-feelers, require all the services we'll want,
             // for feelers, only require they be a full node (only because most
