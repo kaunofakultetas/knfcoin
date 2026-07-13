@@ -105,7 +105,7 @@ public:
         consensus.SegwitHeight = 0; // Activate immediately from genesis (BIP141, BIP143, BIP147)
         consensus.MinBIP9WarningHeight = 0; // Set to 0 since segwit is active from start
         consensus.powLimit = uint256S("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        consensus.nPowTargetTimespan = 3 * 60 * 60; // 3 Hours
+        consensus.nPowTargetTimespan = 9 * 60 * 60; // 9 Hours
         consensus.nPowTargetSpacing = 2.5 * 60;
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
