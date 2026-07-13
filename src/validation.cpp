@@ -3703,9 +3703,23 @@ static bool ContextualCheckBlock(const CBlock& block, BlockValidationState& stat
     // Enforce rule that the coinbase starts with serialized block height
     if (nHeight >= consensusParams.BIP34Height)
     {
+        const CScript& scriptSig = block.vtx[0]->vin[0].scriptSig;
         CScript expect = CScript() << nHeight;
-        if (block.vtx[0]->vin[0].scriptSig.size() < expect.size() ||
-            !std::equal(expect.begin(), expect.end(), block.vtx[0]->vin[0].scriptSig.begin())) {
+        bool fHeightOk = scriptSig.size() >= expect.size() &&
+                         std::equal(expect.begin(), expect.end(), scriptSig.begin());
+        /* KNFCoin: BIP34 is active from genesis on this chain, so heights 1-16
+         * are subject to this check. CScript() << nHeight encodes them as a
+         * single OP_1..OP_16 opcode, but standard pool/stratum software
+         * serializes the height as a length-prefixed number push (e.g.
+         * 0x01 0x01 for height 1), so also accept that encoding. Bitcoin and
+         * Litecoin never hit this case because BIP34 activated at heights far
+         * above 16. */
+        if (!fHeightOk && nHeight >= 1 && nHeight <= 16) {
+            CScript expect_push = CScript() << CScriptNum::serialize(nHeight);
+            fHeightOk = scriptSig.size() >= expect_push.size() &&
+                        std::equal(expect_push.begin(), expect_push.end(), scriptSig.begin());
+        }
+        if (!fHeightOk) {
             return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "bad-cb-height", "block height mismatch in coinbase");
         }
     }
