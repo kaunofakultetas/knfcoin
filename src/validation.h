@@ -70,7 +70,11 @@ static const unsigned int MAX_BLOCKFILE_SIZE = 0x8000000; // 128 MiB
 static const int MAX_SCRIPTCHECK_THREADS = 15;
 /** -par default (number of script-checking threads, 0 = auto) */
 static const int DEFAULT_SCRIPTCHECK_THREADS = 0;
-static const int64_t DEFAULT_MAX_TIP_AGE = 24 * 60 * 60;
+/** KNFCoin: default was 24h (Litecoin). On a small network the chain can sit idle for
+ *  weeks; if the tip is older than this the node re-enters IBD on restart and
+ *  getblocktemplate refuses to serve work, deadlocking mining. Effectively disable
+ *  the tip-age check (100 years). Can still be overridden with -maxtipage. */
+static const int64_t DEFAULT_MAX_TIP_AGE = 100LL * 365 * 24 * 60 * 60;
 static const bool DEFAULT_CHECKPOINTS_ENABLED = true;
 static const bool DEFAULT_TXINDEX = false;
 static const char* const DEFAULT_BLOCKFILTERINDEX = "1";
